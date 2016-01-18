@@ -1,7 +1,7 @@
 Vumi BlastSMS
 ========
 
-A `Vumi`_ USSD transport for BlastSMS.
+A `Vumi`_ USSD transport for BlastSMS in Botswana.
 
 .. _Vumi: http://github.com/praekelt/vumi
 
@@ -22,4 +22,4 @@ You can contact the Vumi development team in the following ways:
 .. _Freenode IRC network: https://webchat.freenode.net/?channels=#vumi
 
 Issues can be filed in the GitHub issue tracker. Please don't use the issue
-tracker for general support queries.
+tracker for general support queries. Thanks.
