@@ -1,6 +1,6 @@
-"""Vumi AAT USSD transport."""
-from .ussd import AatUssdTransport
+"""Vumi BlastSMS USSD transport."""
+from .ussd import BlastSMSUssdTransport
 
-__version__ = "0.5.3a"
+__version__ = "0.0.1"
 
-__all__ = ['AatUssdTransport']
+__all__ = ['BlastSMSUssdTransport']
