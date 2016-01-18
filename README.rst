@@ -1,7 +1,7 @@
 Vumi BlastSMS
 ========
 
-A `Vumi`_ USSD transport for BlastSMS.
+A `Vumi`_ USSD transport for BlastSMS in Botswana.
 
 .. _Vumi: http://github.com/praekelt/vumi
 
