@@ -14,6 +14,7 @@ setup(
     install_requires=[
         'vumi',
         'Twisted>=13.1.0',
+        'lxml==3.6.0'
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
