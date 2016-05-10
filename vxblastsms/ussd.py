@@ -111,15 +111,10 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             content=content,
             to_addr=to_addr,
             from_addr=from_addr,
+            provider=provider,
             session_event=session_event,
             transport_type=self.transport_type,
-            transport_metadata={
-                'aat_ussd': {
-                    'provider': provider,
-                    'ussd_session_id': ussd_session_id,
-                }
-            },
-            provider=provider,
+            transport_metadata={},
         )
 
     def generate_body(self, reply, callback, session_event):

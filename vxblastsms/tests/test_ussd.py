@@ -333,12 +333,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             msg,
             session_event=TransportUserMessage.SESSION_NEW,
             content=None,
-            transport_metadata={
-                'aat_ussd': {
-                    'provider': 'mtn',
-                    'ussd_session_id': ussd_session_id,
-                }
-            }
+            transport_metadata={}
         )
 
         reply_content = "We want ... a shrubbery!"
