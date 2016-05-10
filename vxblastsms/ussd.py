@@ -16,8 +16,8 @@ class BlastSMSUssdTransportConfig(HttpRpcTransport.CONFIG_CLASS):
         'The base url of the transport',
         required=True, static=True)
     provider_mappings = ConfigDict(
-        'Mappings from the provider values received from BlastSMS to normalised '
-        'provider values',
+        'Mappings from the provider values received from BlastSMS to '
+        'normalised provider values',
         static=True, default={})
 
 
@@ -103,8 +103,8 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             content = None
 
         log.info(
-            'BlastSMSUssdTransport receiving inbound message from %s to %s.' % (
-                from_addr, to_addr))
+            'BlastSMSUssdTransport receiving inbound message from %s to '
+            '%s.' % (from_addr, to_addr))
 
         yield self.publish_message(
             message_id=message_id,
