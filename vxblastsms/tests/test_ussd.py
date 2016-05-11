@@ -35,10 +35,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         defaults.update(config)
         return self.tx_helper.get_transport(defaults)
 
-    def callback_url(self, to_addr):
-        return "http://www.example.com/foo/api/aat/ussd/?to_addr=%s" % (
-            quote(to_addr),)
-
     def assert_inbound_message(self, msg, **field_values):
         expected_field_values = {
             'content': "",
@@ -48,27 +44,16 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         for field, expected_value in expected_field_values.iteritems():
             self.assertEqual(msg[field], expected_value)
 
-    def assert_outbound_message(self, msg, content, callback,
-                                continue_session=True):
-        # sub_elements = ['msisdn', 'session_id', 'app_id', 'type', 'msg']
-
+    def assert_outbound_message(self, msg, content, continue_session=True):
         se_msisdn = '<msisdn>%s</msisdn>' % '27729042520'
         se_sessionid = '<sessionid>%s</sessionid>' % 'var_sessionid'
         se_appid = '<appid>%s</appid>' % 'var_appid'
-        se_msg = '<msg>%s</msg>' % 'this_is_a_msg'
+        se_msg = '<msg>%s</msg>' % content
 
         if continue_session:
             se_type = '<type>%s</type>' % '2'
         else:
             se_type = '<type>%s</type>' % '3'
-        #     options = (
-        #         '<options>'
-        #         '<option callback="%s" command="1" display="false"'
-        #         ' order="1" />'
-        #         '</options>'
-        #     ) % callback
-        # else:
-        #     options = ""
 
         xml = ''.join([
             '<ussdresp>',
@@ -77,6 +62,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ])
 
         self.assertEqual(msg, xml)
+        # self.assertEqual(0, 1)
 
     def assert_ack(self, ack, reply):
         self.assertEqual(ack.payload['event_type'], 'ack')
@@ -112,7 +98,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             reply_content,
-            self.callback_url(ussd_string),
         )
 
         [ack] = yield self.tx_helper.wait_for_dispatched_events(1)
@@ -145,7 +130,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             reply_content,
-            self.callback_url(ussd_string),
         )
 
         [ack] = yield self.tx_helper.wait_for_dispatched_events(1)
@@ -201,7 +185,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             reply_content,
-            self.callback_url(ussd_string),
             continue_session=False,
         )
 
@@ -231,7 +214,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             reply_content,
-            self.callback_url(to_addr="*1234#"),
             continue_session=False,
         )
 
@@ -262,7 +244,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             reply_content,
-            self.callback_url(ussd_string),
             continue_session=True,
         )
 
@@ -393,7 +374,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             reply_content,
-            self.callback_url(ussd_string),
             continue_session=True,
         )
 
@@ -417,7 +397,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             reply_content,
-            self.callback_url(ussd_string),
             continue_session=True,
         )
 

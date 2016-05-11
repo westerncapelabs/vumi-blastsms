@@ -125,7 +125,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             },
         )
 
-    def generate_body(self, msisdn, sessionid, appid, reply, callback,
+    def generate_body(self, msisdn, sessionid, appid, reply_content,
                       session_event):
 
         e_ussdresp = Element('ussdresp')
@@ -145,21 +145,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             se_type.text = '3'
 
         se_msg = SubElement(e_ussdresp, 'msg')
-        se_msg.text = 'this_is_a_msg'
-
-        # # If this is not a session close event, then send options
-        # if session_event != TransportUserMessage.SESSION_CLOSE:
-        #     options = SubElement(e_ussdresp, 'options')
-        #     SubElement(
-        #         options,
-        #         'option',
-        #         {
-        #             'command': '1',
-        #             'order': '1',
-        #             'callback': callback,
-        #             'display': "false"
-        #         }
-        #     )
+        se_msg.text = reply_content
 
         return tostring(
             e_ussdresp,
@@ -176,11 +162,11 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             message['transport_metadata']['sessionid'],  # sessionid
             message['transport_metadata']['appid'],  # appid
             message['content'],
-            self.get_callback_url(message['from_addr']),
             message['session_event']
         )
         log.info('BlastSMSUssdTransport outbound message with content: %r'
                  % (body,))
+        # print(body)
 
         # Errors
         if not message['content']:
