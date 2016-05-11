@@ -17,7 +17,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         request_defaults = {
             'msisdn': '27729042520',
             'provider': 'MTN',
-            'type': '2'  # resume
+            'type': '2',  # resume
+            'shortcode': '8864'
         }
         self.tx_helper = self.add_helper(
             HttpRpcTransportHelper(
@@ -278,7 +279,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         self.assertEqual(
             json.loads(response.delivered_body),
-            {'missing_parameter': ['msisdn']})
+            {'missing_parameter': ['msisdn', 'shortcode']})
 
         self.assertEqual(response.code, 400)
 

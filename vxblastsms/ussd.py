@@ -28,7 +28,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     transport_type = 'ussd'
     transport_name = 'vumi-blastsms'
     ENCODING = 'utf-8'
-    EXPECTED_FIELDS = set(['msisdn', 'provider', 'type'])
+    EXPECTED_FIELDS = set(['msisdn', 'provider', 'type', 'shortcode'])
     OPTIONAL_FIELDS = set(['request', 'appid', 'to_addr'])
 
     # errors
