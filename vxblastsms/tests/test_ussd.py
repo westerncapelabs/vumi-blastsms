@@ -50,23 +50,30 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
     def assert_outbound_message(self, msg, content, callback,
                                 continue_session=True):
-        headertext = '<headertext>%s</headertext>' % content
+        # sub_elements = ['msisdn', 'session_id', 'app_id', 'type', 'msg']
+
+        se_msisdn = '<msisdn>%s</msisdn>' % '27729042520'
+        se_sessionid = '<sessionid>%s</sessionid>' % 'var_sessionid'
+        se_appid = '<appid>%s</appid>' % 'var_appid'
+        se_msg = '<msg>%s</msg>' % 'this_is_a_msg'
 
         if continue_session:
-            options = (
-                '<options>'
-                '<option callback="%s" command="1" display="false"'
-                ' order="1" />'
-                '</options>'
-            ) % callback
+            se_type = '<type>%s</type>' % '2'
         else:
-            options = ""
+            se_type = '<type>%s</type>' % '3'
+        #     options = (
+        #         '<options>'
+        #         '<option callback="%s" command="1" display="false"'
+        #         ' order="1" />'
+        #         '</options>'
+        #     ) % callback
+        # else:
+        #     options = ""
 
         xml = ''.join([
-            '<request>',
-            headertext,
-            options,
-            '</request>',
+            '<ussdresp>',
+            se_msisdn, se_sessionid, se_appid, se_type, se_msg,
+            '</ussdresp>'
         ])
 
         self.assertEqual(msg, xml)
@@ -261,6 +268,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         [ack] = yield self.tx_helper.wait_for_dispatched_events(1)
         self.assert_ack(ack, reply)
+        # self.assertEqual(1, 2)
 
     @inlineCallbacks
     def test_request_with_missing_parameters(self):
@@ -291,6 +299,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     def test_no_reply_to_in_response(self):
         yield self.get_transport()
         msg = yield self.tx_helper.make_dispatch_outbound(
+            transport_metadata={
+                'sessionid': 'test_sessionid',
+                'appid': 'test_appid'
+            },
             content="Nudge, nudge, wink, wink. Know what I mean?",
             message_id=1
         )
@@ -301,6 +313,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     def test_no_content_in_reply(self):
         yield self.get_transport()
         msg = yield self.tx_helper.make_dispatch_outbound(
+            transport_metadata={
+                'sessionid': 'test_sessionid',
+                'appid': 'test_appid'
+            },
             content="",
             message_id=1
         )
@@ -311,6 +327,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     def test_failed_request(self):
         yield self.get_transport()
         msg = yield self.tx_helper.make_dispatch_outbound(
+            transport_metadata={
+                'sessionid': 'test_sessionid',
+                'appid': 'test_appid'
+            },
             in_reply_to='xxxx',
             content="She turned me into a newt!",
             message_id=1
@@ -333,7 +353,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             msg,
             session_event=TransportUserMessage.SESSION_NEW,
             content=None,
-            transport_metadata={}
+            transport_metadata={
+                'appid': 'var_appid',
+                'sessionid': 'var_sessionid',
+            }
         )
 
         reply_content = "We want ... a shrubbery!"

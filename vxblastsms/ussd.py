@@ -4,6 +4,7 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.web import http
+import twisted
 
 from vumi.message import TransportUserMessage
 from vumi.config import ConfigText, ConfigDict
@@ -25,7 +26,9 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     """
     HTTP transport for USSD with BlastSMS
     """
+    twisted.internet.base.DelayedCall.debug = True
     transport_type = 'ussd'
+    transport_name = 'vumi-blastsms'
     ENCODING = 'utf-8'
     EXPECTED_FIELDS = set(['msisdn', 'provider'])
     OPTIONAL_FIELDS = set(['request', 'ussdSessionId', 'to_addr'])
@@ -114,38 +117,64 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             provider=provider,
             session_event=session_event,
             transport_type=self.transport_type,
-            transport_metadata={},
+            # transport_name=self.transport_name,  # ?
+            transport_metadata={
+                'sessionid': 'var_sessionid',
+                'appid': 'var_appid',
+
+            },
         )
 
-    def generate_body(self, reply, callback, session_event):
-        request = Element('request')
-        headertext = SubElement(request, 'headertext')
-        headertext.text = reply
+    def generate_body(self, msisdn, sessionid, appid, reply, callback,
+                      session_event):
 
-        # If this is not a session close event, then send options
+        e_ussdresp = Element('ussdresp')
+
+        se_msisdn = SubElement(e_ussdresp, 'msisdn')
+        se_msisdn.text = msisdn
+        se_sessionid = SubElement(e_ussdresp, 'sessionid')
+        se_sessionid.text = sessionid
+        se_appid = SubElement(e_ussdresp, 'appid')
+        se_appid.text = appid
+
+        # Set Message Type: 2 for Response, 3 for Release
+        se_type = SubElement(e_ussdresp, 'type')
         if session_event != TransportUserMessage.SESSION_CLOSE:
-            options = SubElement(request, 'options')
-            SubElement(
-                options,
-                'option',
-                {
-                    'command': '1',
-                    'order': '1',
-                    'callback': callback,
-                    'display': "false"
-                }
-            )
+            se_type.text = '2'
+        else:
+            se_type.text = '3'
+
+        se_msg = SubElement(e_ussdresp, 'msg')
+        se_msg.text = 'this_is_a_msg'
+
+        # # If this is not a session close event, then send options
+        # if session_event != TransportUserMessage.SESSION_CLOSE:
+        #     options = SubElement(e_ussdresp, 'options')
+        #     SubElement(
+        #         options,
+        #         'option',
+        #         {
+        #             'command': '1',
+        #             'order': '1',
+        #             'callback': callback,
+        #             'display': "false"
+        #         }
+        #     )
 
         return tostring(
-            request,
+            e_ussdresp,
             encoding='utf-8',
         )
 
     @inlineCallbacks
     def handle_outbound_message(self, message):
+
         # Generate outbound message
         message_id = message['message_id']
         body = self.generate_body(
+            message['to_addr'],  # msisdn
+            message['transport_metadata']['sessionid'],  # sessionid
+            message['transport_metadata']['appid'],  # appid
             message['content'],
             self.get_callback_url(message['from_addr']),
             message['session_event']
