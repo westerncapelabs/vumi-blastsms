@@ -16,9 +16,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     def setUp(self):
         request_defaults = {
             'msisdn': '27729042520',
+            'shortcode': '8864',
+            'sessionid': 'test_session_id',
             'provider': 'MTN',
             'type': '2',  # resume
-            'shortcode': '8864'
         }
         self.tx_helper = self.add_helper(
             HttpRpcTransportHelper(
@@ -45,11 +46,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         for field, expected_value in expected_field_values.iteritems():
             self.assertEqual(msg[field], expected_value)
 
-    def assert_outbound_message(self, msg, appid, in_reply_to, content,
-                                continue_session=True):
+    def assert_outbound_message(self, msg, appid, in_reply_to, sessionid,
+                                content, continue_session=True):
         se_msisdn = '<msisdn>%s</msisdn>' % '27729042520'
-        se_sessionid = '<sessionid>%s</sessionid>' % 'var_sessionid'
-
+        se_sessionid = '<sessionid>%s</sessionid>' % str(sessionid)
         se_msg = '<msg>%s</msg>' % content
 
         if appid is None:
@@ -106,6 +106,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             response.delivered_body,
             None,  # appid
             msg['message_id'],
+            msg['transport_metadata']['sessionid'],
             reply_content,
         )
 
@@ -142,6 +143,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             response.delivered_body,
             None,  # appid
             msg['message_id'],
+            msg['transport_metadata']['sessionid'],
             reply_content,
         )
 
@@ -200,6 +202,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             response.delivered_body,
             None,  # appid
             msg['message_id'],
+            msg['transport_metadata']['sessionid'],
             reply_content,
             continue_session=False,
         )
@@ -231,6 +234,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             response.delivered_body,
             None,  # appid
             msg['message_id'],
+            msg['transport_metadata']['sessionid'],
             reply_content,
             continue_session=False,
         )
@@ -263,6 +267,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             response.delivered_body,
             None,  # appid
             msg['message_id'],
+            msg['transport_metadata']['sessionid'],
             reply_content,
             continue_session=True,
         )
@@ -275,7 +280,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     def test_request_with_missing_parameters(self):
         yield self.get_transport()
         response = yield self.tx_helper.mk_request_raw(
-            params={"request": '', "provider": '', "type": '1'})
+            params={"request": '', "provider": '', "type": '1',
+                    "sessionid": 'tsid'})
 
         self.assertEqual(
             json.loads(response.delivered_body),
@@ -357,7 +363,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             content=None,
             transport_metadata={
                 'appid': 'xxxx',
-                'sessionid': 'var_sessionid',
+                'sessionid': 'test_session_id',
             }
         )
 
@@ -396,6 +402,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             response.delivered_body,
             None,  # appid
             msg['message_id'],
+            msg['transport_metadata']['sessionid'],
             reply_content,
             continue_session=True,
         )
@@ -421,6 +428,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             response.delivered_body,
             None,  # appid
             msg['message_id'],
+            msg['transport_metadata']['sessionid'],
             reply_content,
             continue_session=True,
         )

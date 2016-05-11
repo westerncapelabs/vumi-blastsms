@@ -28,7 +28,8 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     transport_type = 'ussd'
     transport_name = 'vumi-blastsms'
     ENCODING = 'utf-8'
-    EXPECTED_FIELDS = set(['msisdn', 'provider', 'type', 'shortcode'])
+    EXPECTED_FIELDS = set(['msisdn', 'shortcode', 'sessionid', 'provider',
+                           'type'])
     OPTIONAL_FIELDS = set(['request', 'appid', 'to_addr'])
 
     # errors
@@ -139,7 +140,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             transport_type=self.transport_type,
             # transport_name=self.transport_name,  # ?
             transport_metadata={
-                'sessionid': 'var_sessionid',
+                'sessionid': values['sessionid'],
                 'appid': ussd_appid,
 
             },
