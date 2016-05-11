@@ -4,7 +4,6 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.web import http
-import twisted
 
 from vumi.message import TransportUserMessage
 from vumi.config import ConfigText, ConfigDict
@@ -26,12 +25,11 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     """
     HTTP transport for USSD with BlastSMS
     """
-    twisted.internet.base.DelayedCall.debug = True
     transport_type = 'ussd'
     transport_name = 'vumi-blastsms'
     ENCODING = 'utf-8'
     EXPECTED_FIELDS = set(['msisdn', 'provider'])
-    OPTIONAL_FIELDS = set(['request', 'ussdSessionId', 'to_addr'])
+    OPTIONAL_FIELDS = set(['request', 'appid', 'to_addr'])
 
     # errors
     RESPONSE_FAILURE_ERROR = "Response to http request failed."
@@ -94,7 +92,8 @@ class BlastSMSUssdTransport(HttpRpcTransport):
 
         from_addr = values['msisdn']
         provider = self.normalise_provider(values['provider'])
-        ussd_session_id = optional_values['ussdSessionId']
+
+        ussd_appid = optional_values['appid']
 
         if optional_values['to_addr'] is not None:
             session_event = TransportUserMessage.SESSION_RESUME
@@ -120,22 +119,33 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             # transport_name=self.transport_name,  # ?
             transport_metadata={
                 'sessionid': 'var_sessionid',
-                'appid': 'var_appid',
+                'appid': ussd_appid,
 
             },
         )
 
-    def generate_body(self, msisdn, sessionid, appid, reply_content,
-                      session_event):
+    def generate_body(self, msisdn, sessionid, appid, in_reply_to,
+                      reply_content, session_event):
 
         e_ussdresp = Element('ussdresp')
 
         se_msisdn = SubElement(e_ussdresp, 'msisdn')
         se_msisdn.text = msisdn
+
         se_sessionid = SubElement(e_ussdresp, 'sessionid')
         se_sessionid.text = sessionid
+        # if sessionid
+        #     se_sessionid.text = sessionid
+        # else:
+        #     se_sessionid.text = ''
+
         se_appid = SubElement(e_ussdresp, 'appid')
-        se_appid.text = appid
+        if appid is not None:
+            se_appid.text = appid
+        else:
+            # provide application session id - use reference to inbound
+            # message that started the session
+            se_appid.text = in_reply_to
 
         # Set Message Type: 2 for Response, 3 for Release
         se_type = SubElement(e_ussdresp, 'type')
@@ -161,12 +171,12 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             message['to_addr'],  # msisdn
             message['transport_metadata']['sessionid'],  # sessionid
             message['transport_metadata']['appid'],  # appid
+            message['in_reply_to'],
             message['content'],
             message['session_event']
         )
         log.info('BlastSMSUssdTransport outbound message with content: %r'
                  % (body,))
-        # print(body)
 
         # Errors
         if not message['content']:

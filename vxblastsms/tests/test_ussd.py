@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-from urllib import quote
 
 from twisted.internet.defer import inlineCallbacks
 
@@ -44,11 +43,17 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         for field, expected_value in expected_field_values.iteritems():
             self.assertEqual(msg[field], expected_value)
 
-    def assert_outbound_message(self, msg, content, continue_session=True):
+    def assert_outbound_message(self, msg, appid, in_reply_to, content,
+                                continue_session=True):
         se_msisdn = '<msisdn>%s</msisdn>' % '27729042520'
         se_sessionid = '<sessionid>%s</sessionid>' % 'var_sessionid'
-        se_appid = '<appid>%s</appid>' % 'var_appid'
+
         se_msg = '<msg>%s</msg>' % content
+
+        if appid is None:
+            se_appid = '<appid>%s</appid>' % str(in_reply_to)
+        else:
+            se_appid = '<appid>%s</appid>' % appid
 
         if continue_session:
             se_type = '<type>%s</type>' % '2'
@@ -97,6 +102,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         self.assert_outbound_message(
             response.delivered_body,
+            None,  # appid
+            msg['message_id'],
             reply_content,
         )
 
@@ -129,6 +136,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         self.assert_outbound_message(
             response.delivered_body,
+            None,  # appid
+            msg['message_id'],
             reply_content,
         )
 
@@ -184,6 +193,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         self.assert_outbound_message(
             response.delivered_body,
+            None,  # appid
+            msg['message_id'],
             reply_content,
             continue_session=False,
         )
@@ -213,6 +224,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         self.assert_outbound_message(
             response.delivered_body,
+            None,  # appid
+            msg['message_id'],
             reply_content,
             continue_session=False,
         )
@@ -243,6 +256,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         self.assert_outbound_message(
             response.delivered_body,
+            None,  # appid
+            msg['message_id'],
             reply_content,
             continue_session=True,
         )
@@ -325,17 +340,17 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             'provider_mappings': {'MTN': 'mtn'}
         })
 
-        ussd_session_id = 'xxxx'
+        ussd_appid = 'xxxx'
         content = "*code#"
         d = self.tx_helper.mk_request(request=content,
-                                      ussdSessionId=ussd_session_id)
+                                      appid=ussd_appid)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
             msg,
             session_event=TransportUserMessage.SESSION_NEW,
             content=None,
             transport_metadata={
-                'appid': 'var_appid',
+                'appid': 'xxxx',
                 'sessionid': 'var_sessionid',
             }
         )
@@ -373,6 +388,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         self.assert_outbound_message(
             response.delivered_body,
+            None,  # appid
+            msg['message_id'],
             reply_content,
             continue_session=True,
         )
@@ -396,6 +413,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         self.assert_outbound_message(
             response.delivered_body,
+            None,  # appid
+            msg['message_id'],
             reply_content,
             continue_session=True,
         )
