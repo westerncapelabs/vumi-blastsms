@@ -28,7 +28,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     transport_type = 'ussd'
     transport_name = 'vumi-blastsms'
     ENCODING = 'utf-8'
-    EXPECTED_FIELDS = set(['msisdn', 'provider'])
+    EXPECTED_FIELDS = set(['msisdn', 'provider', 'type'])
     OPTIONAL_FIELDS = set(['request', 'appid', 'to_addr'])
 
     # errors
@@ -59,6 +59,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
                 values[field] = raw_value.decode(self.ENCODING)
             else:
                 values[field] = None
+        # print(values)
         return values
 
     def normalise_provider(self, provider):
@@ -75,13 +76,26 @@ class BlastSMSUssdTransport(HttpRpcTransport):
         values, errors = self.get_field_values(
             request,
             self.EXPECTED_FIELDS,
-            self.OPTIONAL_FIELDS,
+            self.OPTIONAL_FIELDS,  # pass this in for error checking
         )
+        print('values')
+        print(values)
+        print('values')
+        print('')
+
+        print('errors')
+        print(errors)
+        print('errors')
+        print('')
 
         optional_values = self.get_optional_field_values(
             request,
             self.OPTIONAL_FIELDS
         )
+        print('optional_values')
+        print(optional_values)
+        print('optional_values')
+        print('')
 
         if errors:
             log.info('Unhappy incoming message: %s ' % (errors,))
@@ -95,12 +109,19 @@ class BlastSMSUssdTransport(HttpRpcTransport):
 
         ussd_appid = optional_values['appid']
 
-        if optional_values['to_addr'] is not None:
+        if values['type'] == '2':  # resume session
             session_event = TransportUserMessage.SESSION_RESUME
+        elif values['type'] == '1':  # new session
+            session_event = TransportUserMessage.SESSION_NEW
+        else:
+            # TODO: handle other types if necessary
+            # Default to new session for 3 & 4 for now
+            session_event = TransportUserMessage.SESSION_NEW
+
+        if optional_values['to_addr'] is not None:
             to_addr = optional_values['to_addr']
             content = optional_values['request']
         else:
-            session_event = TransportUserMessage.SESSION_NEW
             to_addr = optional_values['request']
             content = None
 

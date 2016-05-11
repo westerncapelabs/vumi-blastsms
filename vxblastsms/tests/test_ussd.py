@@ -17,6 +17,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         request_defaults = {
             'msisdn': '27729042520',
             'provider': 'MTN',
+            'type': '2'  # resume
         }
         self.tx_helper = self.add_helper(
             HttpRpcTransportHelper(
@@ -85,7 +86,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*1234#"
 
         # Send initial request
-        d = self.tx_helper.mk_request(request=ussd_string)
+        d = self.tx_helper.mk_request(request=ussd_string, type='1')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 
         self.assert_inbound_message(
@@ -109,6 +110,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         [ack] = yield self.tx_helper.wait_for_dispatched_events(1)
         self.assert_ack(ack, reply)
+        # self.assertEqual(0, 1)
 
     @inlineCallbacks
     def test_inbound_begin_with_different_provider(self):
@@ -118,7 +120,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*1234#"
 
         # Send initial request
-        d = self.tx_helper.mk_request(request=ussd_string, provider="Camelot")
+        d = self.tx_helper.mk_request(request=ussd_string, provider="Camelot",
+                                      type='1')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 
         self.assert_inbound_message(
@@ -153,7 +156,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*1234#"
 
         with LogCatcher() as lc:
-            d = self.tx_helper.mk_request(request=ussd_string, provider="Tim")
+            d = self.tx_helper.mk_request(request=ussd_string, provider="Tim",
+                                          type='1')
             [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 
         self.assertTrue(
@@ -177,7 +181,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*code#"
 
         # Send initial request
-        d = self.tx_helper.mk_request(request=ussd_string)
+        d = self.tx_helper.mk_request(request=ussd_string, type='1')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 
         self.assert_inbound_message(
@@ -270,7 +274,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     def test_request_with_missing_parameters(self):
         yield self.get_transport()
         response = yield self.tx_helper.mk_request_raw(
-            params={"request": '', "provider": ''})
+            params={"request": '', "provider": '', "type": '1'})
 
         self.assertEqual(
             json.loads(response.delivered_body),
@@ -343,7 +347,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_appid = 'xxxx'
         content = "*code#"
         d = self.tx_helper.mk_request(request=content,
-                                      appid=ussd_appid)
+                                      appid=ussd_appid,
+                                      type='1')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
             msg,
