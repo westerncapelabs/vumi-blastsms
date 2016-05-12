@@ -6,7 +6,6 @@ from twisted.internet.defer import inlineCallbacks
 from vumi.message import TransportUserMessage
 from vumi.tests.helpers import VumiTestCase
 from vumi.transports.httprpc.tests.helpers import HttpRpcTransportHelper
-# from vumi.tests.utils import LogCatcher
 
 from vxblastsms.ussd import BlastSMSUssdTransport
 
@@ -15,11 +14,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
     def setUp(self):
         request_defaults = {
-            'msisdn': '27729042520',
+            'msisdn': '273334444',
             'shortcode': '8864',
             'sessionid': 'test_session_id',
             'type': '2',  # resume
-            # 'msg': None  - None gets converted to u'None'
         }
         self.tx_helper = self.add_helper(
             HttpRpcTransportHelper(
@@ -46,16 +44,17 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         for field, expected_value in expected_field_values.iteritems():
             self.assertEqual(msg[field], expected_value)
 
-    def assert_outbound_message(self, msg, appid, in_reply_to, sessionid,
-                                content, continue_session=True):
-        se_msisdn = '<msisdn>%s</msisdn>' % '27729042520'
+    def assert_outbound_message(self, outbound_msg, appid, message_id,
+                                sessionid, reply_content, msisdn,
+                                continue_session=True):
+        se_msisdn = '<msisdn>%s</msisdn>' % str(msisdn)
         se_sessionid = '<sessionid>%s</sessionid>' % str(sessionid)
-        se_msg = '<msg>%s</msg>' % content
+        se_msg = '<msg>%s</msg>' % str(reply_content)
 
         if appid is None:
-            se_appid = '<appid>%s</appid>' % str(in_reply_to)
+            se_appid = '<appid>%s</appid>' % str(message_id)
         else:
-            se_appid = '<appid>%s</appid>' % appid
+            se_appid = '<appid>%s</appid>' % str(appid)
 
         if continue_session:
             se_type = '<type>%s</type>' % '2'
@@ -68,8 +67,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             '</ussdresp>'
         ])
 
-        self.assertEqual(msg, xml)
-        # self.assertEqual(0, 1)
+        self.assertEqual(outbound_msg, xml)
 
     def assert_ack(self, ack, reply):
         self.assertEqual(ack.payload['event_type'], 'ack')
@@ -102,17 +100,19 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.tx_helper.dispatch_outbound(reply)
         response = yield d
 
+        print(msg)
+
         self.assert_outbound_message(
-            response.delivered_body,
+            response.delivered_body,  # outbound_msg
             None,  # appid
-            msg['message_id'],
-            msg['transport_metadata']['sessionid'],
-            reply_content,
+            msg['message_id'],  # message_id
+            msg['transport_metadata']['sessionid'],  # session_id
+            reply_content,  # expected content in reply
+            msg['from_addr']  # msisdn
         )
 
         [ack] = yield self.tx_helper.wait_for_dispatched_events(1)
         self.assert_ack(ack, reply)
-        # self.assertEqual(0, 1)
 
     @inlineCallbacks
     def test_inbound_begin_with_close(self):
@@ -140,6 +140,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             msg['message_id'],
             msg['transport_metadata']['sessionid'],
             reply_content,
+            msg['from_addr'],  # msisdn
             continue_session=False,
         )
 
@@ -172,6 +173,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             msg['message_id'],
             msg['transport_metadata']['sessionid'],
             reply_content,
+            msg['from_addr'],  # msisdn
             continue_session=False,
         )
 
@@ -205,12 +207,12 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             msg['message_id'],
             msg['transport_metadata']['sessionid'],
             reply_content,
+            msg['from_addr'],  # msisdn
             continue_session=True,
         )
 
         [ack] = yield self.tx_helper.wait_for_dispatched_events(1)
         self.assert_ack(ack, reply)
-        # self.assertEqual(1, 2)
 
     @inlineCallbacks
     def test_request_with_missing_parameters(self):
@@ -337,6 +339,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             msg['message_id'],
             msg['transport_metadata']['sessionid'],
             reply_content,
+            msg['from_addr'],  # msisdn
             continue_session=True,
         )
 
@@ -363,6 +366,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             msg['message_id'],
             msg['transport_metadata']['sessionid'],
             reply_content,
+            msg['from_addr'],  # msisdn
             continue_session=True,
         )
 
