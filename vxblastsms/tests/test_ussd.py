@@ -18,7 +18,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             'msisdn': '27729042520',
             'shortcode': '8864',
             'sessionid': 'test_session_id',
-            'provider': 'MTN',
             'type': '2',  # resume
             # 'msg': None  - None gets converted to u'None'
         }
@@ -114,70 +113,6 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         [ack] = yield self.tx_helper.wait_for_dispatched_events(1)
         self.assert_ack(ack, reply)
         # self.assertEqual(0, 1)
-
-    @inlineCallbacks
-    def test_inbound_begin_with_different_provider(self):
-        yield self.get_transport({
-            'provider_mappings': {'Camelot': 'camelot'}
-        })
-        ussd_string = "*1234#"
-
-        # Send initial request
-        d = self.tx_helper.mk_request(request=ussd_string, provider="Camelot",
-                                      type='1')
-        [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
-
-        self.assert_inbound_message(
-            msg,
-            session_event=TransportUserMessage.SESSION_NEW,
-            to_addr=ussd_string,
-            content=None,
-            provider="camelot",
-        )
-
-        reply_content = 'We are the Knights Who Say ... Ni!'
-        reply = msg.reply(reply_content)
-        self.tx_helper.dispatch_outbound(reply)
-        response = yield d
-
-        self.assert_outbound_message(
-            response.delivered_body,
-            None,  # appid
-            msg['message_id'],
-            msg['transport_metadata']['sessionid'],
-            reply_content,
-        )
-
-        [ack] = yield self.tx_helper.wait_for_dispatched_events(1)
-        self.assert_ack(ack, reply)
-
-    @inlineCallbacks
-    def test_inbound_with_unknown_provider(self):
-        yield self.get_transport({
-            'provider_mappings': {'Camelot': 'camelot'}
-        })
-
-        ussd_string = "*1234#"
-
-        with LogCatcher() as lc:
-            d = self.tx_helper.mk_request(request=ussd_string, provider="Tim",
-                                          type='1')
-            [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
-
-        self.assertTrue(
-            "No mapping exists for provider 'Tim', using 'Tim' as a fallback"
-            in lc.messages())
-
-        self.assert_inbound_message(
-            msg,
-            session_event=TransportUserMessage.SESSION_NEW,
-            to_addr=ussd_string,
-            content=None,
-            provider="Tim",
-        )
-
-        self.tx_helper.dispatch_outbound(msg.reply("I... am an enchanter"))
-        yield d
 
     @inlineCallbacks
     def test_inbound_begin_with_close(self):
@@ -283,8 +218,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     def test_request_with_missing_parameters(self):
         yield self.get_transport()
         response = yield self.tx_helper.mk_request_raw(
-            params={"request": '', "provider": '', "type": '1',
-                    "sessionid": 'tsid', "msg": 'a_message'})
+            params={"request": '', "type": '1', "sessionid": 'testsid',
+                    "msg": 'a_message'})
 
         self.assertEqual(
             json.loads(response.delivered_body),
@@ -350,9 +285,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
     @inlineCallbacks
     def test_metadata_handled(self):
-        yield self.get_transport({
-            'provider_mappings': {'MTN': 'mtn'}
-        })
+        yield self.get_transport()
 
         ussd_appid = 'xxxx'
         content = "*code#"

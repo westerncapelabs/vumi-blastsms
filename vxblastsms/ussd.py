@@ -6,7 +6,7 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.web import http
 
 from vumi.message import TransportUserMessage
-from vumi.config import ConfigText, ConfigDict
+from vumi.config import ConfigText
 from vumi.transports.httprpc import HttpRpcTransport
 from vumi import log
 
@@ -15,10 +15,6 @@ class BlastSMSUssdTransportConfig(HttpRpcTransport.CONFIG_CLASS):
     base_url = ConfigText(
         'The base url of the transport',
         required=True, static=True)
-    provider_mappings = ConfigDict(
-        'Mappings from the provider values received from BlastSMS to '
-        'normalised provider values',
-        static=True, default={})
 
 
 class BlastSMSUssdTransport(HttpRpcTransport):
@@ -28,8 +24,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     transport_type = 'ussd'
     transport_name = 'vumi-blastsms'
     ENCODING = 'utf-8'
-    EXPECTED_FIELDS = set(['msisdn', 'shortcode', 'sessionid', 'provider',
-                           'type'])
+    EXPECTED_FIELDS = set(['msisdn', 'shortcode', 'sessionid', 'type'])
     OPTIONAL_FIELDS = set(['msg', 'request', 'appid', 'to_addr'])
 
     # errors
@@ -38,12 +33,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     NO_CONTENT_ERROR = "Outbound message has no content."
 
     CONFIG_CLASS = BlastSMSUssdTransportConfig
-
-    @inlineCallbacks
-    def setup_transport(self):
-        yield super(BlastSMSUssdTransport, self).setup_transport()
-        config = self.get_static_config()
-        self.provider_mappings = config.provider_mappings
 
     def get_callback_url(self, to_addr):
         config = self.get_static_config()
@@ -61,15 +50,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             else:
                 values[field] = None
         return values
-
-    def normalise_provider(self, provider):
-        if provider not in self.provider_mappings:
-            log.warning(
-                "No mapping exists for provider '%s', "
-                "using '%s' as a fallback" % (provider, provider,))
-            return provider
-        else:
-            return self.provider_mappings[provider]
 
     @inlineCallbacks
     def handle_raw_inbound_message(self, message_id, request):
@@ -105,7 +85,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             return
 
         from_addr = values['msisdn']
-        provider = self.normalise_provider(values['provider'])
 
         ussd_appid = optional_values['appid']
 
@@ -137,7 +116,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             content=content,
             to_addr=to_addr,
             from_addr=from_addr,
-            provider=provider,
+            # provider=None,
             session_event=session_event,
             transport_type=self.transport_type,
             # transport_name=self.transport_name,  # ?
