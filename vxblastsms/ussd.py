@@ -86,7 +86,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             content=content,
             to_addr=values['shortcode'],
             from_addr=values['msisdn'],
-            # provider=None,
             session_event=session_event,
             transport_type=self.transport_type,
             transport_name=self.transport_name,
