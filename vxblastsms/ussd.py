@@ -103,7 +103,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             # provider=None,
             session_event=session_event,
             transport_type=self.transport_type,
-            # transport_name=self.transport_name,  # ?
+            transport_name=self.transport_name,
             transport_metadata={
                 'sessionid': values['sessionid'],
                 'appid': optional_values['appid'],
