@@ -30,7 +30,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     ENCODING = 'utf-8'
     EXPECTED_FIELDS = set(['msisdn', 'shortcode', 'sessionid', 'provider',
                            'type'])
-    OPTIONAL_FIELDS = set(['request', 'appid', 'to_addr'])
+    OPTIONAL_FIELDS = set(['msg', 'request', 'appid', 'to_addr'])
 
     # errors
     RESPONSE_FAILURE_ERROR = "Response to http request failed."
@@ -60,7 +60,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
                 values[field] = raw_value.decode(self.ENCODING)
             else:
                 values[field] = None
-        # print(values)
         return values
 
     def normalise_provider(self, provider):
@@ -119,12 +118,15 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             # Default to new session for 3 & 4 for now
             session_event = TransportUserMessage.SESSION_NEW
 
+        if optional_values['msg'] is not None:
+            content = optional_values['msg']
+        else:
+            content = None
+
         if optional_values['to_addr'] is not None:
             to_addr = optional_values['to_addr']
-            content = optional_values['request']
         else:
             to_addr = optional_values['request']
-            content = None
 
         log.info(
             'BlastSMSUssdTransport receiving inbound message from %s to '

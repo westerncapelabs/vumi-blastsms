@@ -20,6 +20,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             'sessionid': 'test_session_id',
             'provider': 'MTN',
             'type': '2',  # resume
+            # 'msg': None  - None gets converted to u'None'
         }
         self.tx_helper = self.add_helper(
             HttpRpcTransportHelper(
@@ -217,7 +218,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*1234#"
         user_content = "I didn't expect a kind of Spanish Inquisition!"
         d = self.tx_helper.mk_request(request=user_content,
-                                      to_addr=ussd_string)
+                                      to_addr=ussd_string,
+                                      msg=user_content)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
             msg,
@@ -249,7 +251,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         user_content = "Well, what is it you want?"
         d = self.tx_helper.mk_request(request=user_content,
-                                      to_addr=ussd_string)
+                                      to_addr=ussd_string,
+                                      msg=user_content)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
             msg,
@@ -281,7 +284,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         yield self.get_transport()
         response = yield self.tx_helper.mk_request_raw(
             params={"request": '', "provider": '', "type": '1',
-                    "sessionid": 'tsid'})
+                    "sessionid": 'tsid', "msg": 'a_message'})
 
         self.assertEqual(
             json.loads(response.delivered_body),
@@ -384,7 +387,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         user_content = "Well, what is it you want?"
         d = self.tx_helper.mk_request(request=user_content,
-                                      to_addr=ussd_string)
+                                      to_addr=ussd_string,
+                                      msg=user_content)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
             msg,
