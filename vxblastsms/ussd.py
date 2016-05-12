@@ -68,8 +68,8 @@ class BlastSMSUssdTransport(HttpRpcTransport):
         elif values['type'] == '1':  # new session
             session_event = TransportUserMessage.SESSION_NEW
         else:
-            # TODO: handle other types if necessary
-            # Default to new session for 3 & 4 for now
+            # TODO #4: handle type 3 (close session) and type 4 (timeout)
+            # Default to new session for now
             session_event = TransportUserMessage.SESSION_NEW
 
         if optional_values['msg'] is not None:
