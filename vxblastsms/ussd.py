@@ -6,15 +6,8 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.web import http
 
 from vumi.message import TransportUserMessage
-from vumi.config import ConfigText
 from vumi.transports.httprpc import HttpRpcTransport
 from vumi import log
-
-
-class BlastSMSUssdTransportConfig(HttpRpcTransport.CONFIG_CLASS):
-    base_url = ConfigText(
-        'The base url of the transport',
-        required=True, static=True)
 
 
 class BlastSMSUssdTransport(HttpRpcTransport):
@@ -32,7 +25,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     NOT_REPLY_ERROR = "Outbound message is not a reply"
     NO_CONTENT_ERROR = "Outbound message has no content."
 
-    CONFIG_CLASS = BlastSMSUssdTransportConfig
+    CONFIG_CLASS = HttpRpcTransport.CONFIG_CLASS
 
     def get_optional_field_values(self, request, optional_fields=frozenset()):
         values = {}
