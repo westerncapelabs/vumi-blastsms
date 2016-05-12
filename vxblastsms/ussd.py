@@ -6,7 +6,14 @@ from twisted.web import http
 
 from vumi.message import TransportUserMessage
 from vumi.transports.httprpc import HttpRpcTransport
+from vumi.config import ConfigText
 from vumi import log
+
+
+class BlastSMSUssdTransportConfig(HttpRpcTransport.CONFIG_CLASS):
+    app_id = ConfigText(
+        'App identifying string',
+        required=False, static=True)
 
 
 class BlastSMSUssdTransport(HttpRpcTransport):
@@ -24,7 +31,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     NOT_REPLY_ERROR = "Outbound message is not a reply"
     NO_CONTENT_ERROR = "Outbound message has no content."
 
-    CONFIG_CLASS = HttpRpcTransport.CONFIG_CLASS
+    CONFIG_CLASS = BlastSMSUssdTransportConfig
 
     def get_optional_field_values(self, request, optional_fields=frozenset()):
         values = {}
@@ -86,7 +93,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             transport_metadata={
                 'sessionid': values['sessionid'],
                 'appid': optional_values['appid'],
-
             },
         )
 
@@ -105,9 +111,11 @@ class BlastSMSUssdTransport(HttpRpcTransport):
         if appid is not None:
             se_appid.text = appid
         else:
-            # provide application session id - use reference to inbound
-            # message that started the session
-            se_appid.text = in_reply_to
+            config = self.get_static_config()
+            if config.app_id:
+                se_appid.text = config.app_id
+            else:
+                se_appid.text = None
 
         # Set Message Type: 2 for Response, 3 for Release
         se_type = SubElement(e_ussdresp, 'type')

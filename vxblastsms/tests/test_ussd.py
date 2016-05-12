@@ -28,7 +28,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
     def get_transport(self, config={}):
         defaults = {
-            'base_url': 'http://www.example.com/foo',
+            'app_id': 'test_config_app_id',
             'web_path': '/api/aat/ussd/',
             'web_port': '0',
         }
@@ -44,7 +44,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         for field, expected_value in expected_field_values.iteritems():
             self.assertEqual(msg[field], expected_value)
 
-    def assert_outbound_message(self, outbound_msg, appid, message_id,
+    def assert_outbound_message(self, outbound_msg, appid, config_app_id,
                                 sessionid, reply_content, msisdn,
                                 continue_session=True):
         se_msisdn = '<msisdn>%s</msisdn>' % str(msisdn)
@@ -52,7 +52,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         se_msg = '<msg>%s</msg>' % str(reply_content)
 
         if appid is None:
-            se_appid = '<appid>%s</appid>' % str(message_id)
+            if config_app_id is None:
+                se_appid = None
+            else:
+                se_appid = '<appid>%s</appid>' % str(config_app_id)
         else:
             se_appid = '<appid>%s</appid>' % str(appid)
 
@@ -100,12 +103,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.tx_helper.dispatch_outbound(reply)
         response = yield d
 
-        print(msg)
-
         self.assert_outbound_message(
             response.delivered_body,  # outbound_msg
             None,  # appid
-            msg['message_id'],  # message_id
+            'test_config_app_id',  # config app id
             msg['transport_metadata']['sessionid'],  # session_id
             reply_content,  # expected content in reply
             msg['from_addr']  # msisdn
@@ -137,7 +138,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             None,  # appid
-            msg['message_id'],
+            'test_config_app_id',  # config app id
             msg['transport_metadata']['sessionid'],
             reply_content,
             msg['from_addr'],  # msisdn
@@ -154,7 +155,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*1234#"
         user_content = "I didn't expect a kind of Spanish Inquisition!"
         d = self.tx_helper.mk_request(shortcode=ussd_string,
-                                      msg=user_content)
+                                      msg=user_content,
+                                      appid='provided_app_id')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
             msg,
@@ -169,8 +171,8 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         self.assert_outbound_message(
             response.delivered_body,
-            None,  # appid
-            msg['message_id'],
+            'provided_app_id',  # appid
+            'test_config_app_id',  # config app id
             msg['transport_metadata']['sessionid'],
             reply_content,
             msg['from_addr'],  # msisdn
@@ -204,7 +206,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             None,  # appid
-            msg['message_id'],
+            'test_config_app_id',  # config app id
             msg['transport_metadata']['sessionid'],
             reply_content,
             msg['from_addr'],  # msisdn
@@ -327,7 +329,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         self.assert_outbound_message(
             response.delivered_body,
             None,  # appid
-            msg['message_id'],
+            'test_config_app_id',  # config app id
             msg['transport_metadata']['sessionid'],
             reply_content,
             msg['from_addr'],  # msisdn
