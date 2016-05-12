@@ -1,5 +1,5 @@
 import json
-from urllib import quote
+# from urllib import quote
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 from twisted.internet.defer import inlineCallbacks
@@ -25,7 +25,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     transport_name = 'vumi-blastsms'
     ENCODING = 'utf-8'
     EXPECTED_FIELDS = set(['msisdn', 'shortcode', 'sessionid', 'type'])
-    OPTIONAL_FIELDS = set(['msg', 'request', 'appid', 'to_addr'])
+    OPTIONAL_FIELDS = set(['msg', 'request', 'appid'])
 
     # errors
     RESPONSE_FAILURE_ERROR = "Response to http request failed."
@@ -33,13 +33,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     NO_CONTENT_ERROR = "Outbound message has no content."
 
     CONFIG_CLASS = BlastSMSUssdTransportConfig
-
-    def get_callback_url(self, to_addr):
-        config = self.get_static_config()
-        return "%s%s?to_addr=%s" % (
-            config.base_url.rstrip("/"),
-            config.web_path,
-            quote(to_addr))
 
     def get_optional_field_values(self, request, optional_fields=frozenset()):
         values = {}
@@ -84,10 +77,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             )
             return
 
-        from_addr = values['msisdn']
-
-        ussd_appid = optional_values['appid']
-
         if values['type'] == '2':  # resume session
             session_event = TransportUserMessage.SESSION_RESUME
         elif values['type'] == '1':  # new session
@@ -102,27 +91,22 @@ class BlastSMSUssdTransport(HttpRpcTransport):
         else:
             content = None
 
-        if optional_values['to_addr'] is not None:
-            to_addr = optional_values['to_addr']
-        else:
-            to_addr = optional_values['request']
-
         log.info(
             'BlastSMSUssdTransport receiving inbound message from %s to '
-            '%s.' % (from_addr, to_addr))
+            '%s.' % (values['msisdn'], values['shortcode']))
 
         yield self.publish_message(
             message_id=message_id,
             content=content,
-            to_addr=to_addr,
-            from_addr=from_addr,
+            to_addr=values['shortcode'],
+            from_addr=values['msisdn'],
             # provider=None,
             session_event=session_event,
             transport_type=self.transport_type,
             # transport_name=self.transport_name,  # ?
             transport_metadata={
                 'sessionid': values['sessionid'],
-                'appid': ussd_appid,
+                'appid': optional_values['appid'],
 
             },
         )

@@ -6,7 +6,7 @@ from twisted.internet.defer import inlineCallbacks
 from vumi.message import TransportUserMessage
 from vumi.tests.helpers import VumiTestCase
 from vumi.transports.httprpc.tests.helpers import HttpRpcTransportHelper
-from vumi.tests.utils import LogCatcher
+# from vumi.tests.utils import LogCatcher
 
 from vxblastsms.ussd import BlastSMSUssdTransport
 
@@ -87,7 +87,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*1234#"
 
         # Send initial request
-        d = self.tx_helper.mk_request(request=ussd_string, type='1')
+        d = self.tx_helper.mk_request(shortcode=ussd_string, type='1')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 
         self.assert_inbound_message(
@@ -153,7 +153,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*1234#"
         user_content = "I didn't expect a kind of Spanish Inquisition!"
         d = self.tx_helper.mk_request(request=user_content,
-                                      to_addr=ussd_string,
+                                      shortcode=ussd_string,
                                       msg=user_content)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
@@ -186,7 +186,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         user_content = "Well, what is it you want?"
         d = self.tx_helper.mk_request(request=user_content,
-                                      to_addr=ussd_string,
+                                      shortcode=ussd_string,
                                       msg=user_content)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
@@ -320,7 +320,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         user_content = "Well, what is it you want?"
         d = self.tx_helper.mk_request(request=user_content,
-                                      to_addr=ussd_string,
+                                      shortcode=ussd_string,
                                       msg=user_content)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
@@ -352,7 +352,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         yield self.get_transport()
         content = "One, two, ... five!"
         ussd_string = '*1234#'
-        d = self.tx_helper.mk_request(request=content, to_addr=ussd_string)
+        d = self.tx_helper.mk_request(request=content, shortcode=ussd_string)
 
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 
