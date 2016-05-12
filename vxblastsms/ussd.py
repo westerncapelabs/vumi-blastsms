@@ -1,5 +1,4 @@
 import json
-# from urllib import quote
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 from twisted.internet.defer import inlineCallbacks
@@ -44,24 +43,11 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             self.EXPECTED_FIELDS,
             self.OPTIONAL_FIELDS,  # pass this in for error checking
         )
-        print('values')
-        print(values)
-        print('values')
-        print('')
-
-        print('errors')
-        print(errors)
-        print('errors')
-        print('')
 
         optional_values = self.get_optional_field_values(
             request,
             self.OPTIONAL_FIELDS
         )
-        print('optional_values')
-        print(optional_values)
-        print('optional_values')
-        print('')
 
         if errors:
             log.info('Unhappy incoming message: %s ' % (errors,))
@@ -114,10 +100,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
 
         se_sessionid = SubElement(e_ussdresp, 'sessionid')
         se_sessionid.text = sessionid
-        # if sessionid
-        #     se_sessionid.text = sessionid
-        # else:
-        #     se_sessionid.text = ''
 
         se_appid = SubElement(e_ussdresp, 'appid')
         if appid is not None:
