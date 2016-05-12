@@ -120,7 +120,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*code#"
 
         # Send initial request
-        d = self.tx_helper.mk_request(request=ussd_string, type='1')
+        d = self.tx_helper.mk_request(shortcode=ussd_string, type='1')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 
         self.assert_inbound_message(
@@ -152,8 +152,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         ussd_string = "*1234#"
         user_content = "I didn't expect a kind of Spanish Inquisition!"
-        d = self.tx_helper.mk_request(request=user_content,
-                                      shortcode=ussd_string,
+        d = self.tx_helper.mk_request(shortcode=ussd_string,
                                       msg=user_content)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
@@ -185,8 +184,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "xxxx"
 
         user_content = "Well, what is it you want?"
-        d = self.tx_helper.mk_request(request=user_content,
-                                      shortcode=ussd_string,
+        d = self.tx_helper.mk_request(shortcode=ussd_string,
                                       msg=user_content)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
@@ -218,8 +216,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     def test_request_with_missing_parameters(self):
         yield self.get_transport()
         response = yield self.tx_helper.mk_request_raw(
-            params={"request": '', "type": '1', "sessionid": 'testsid',
-                    "msg": 'a_message'})
+            params={"type": '1', "sessionid": 'testsid', "msg": 'a_message'})
 
         self.assertEqual(
             json.loads(response.delivered_body),
@@ -289,7 +286,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         ussd_appid = 'xxxx'
         content = "*code#"
-        d = self.tx_helper.mk_request(request=content,
+        d = self.tx_helper.mk_request(shortcode=content,
                                       appid=ussd_appid,
                                       type='1')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
@@ -319,8 +316,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = '*1234#'
 
         user_content = "Well, what is it you want?"
-        d = self.tx_helper.mk_request(request=user_content,
-                                      shortcode=ussd_string,
+        d = self.tx_helper.mk_request(shortcode=ussd_string,
                                       msg=user_content)
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
@@ -352,7 +348,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         yield self.get_transport()
         content = "One, two, ... five!"
         ussd_string = '*1234#'
-        d = self.tx_helper.mk_request(request=content, shortcode=ussd_string)
+        d = self.tx_helper.mk_request(msg=content, shortcode=ussd_string)
 
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 

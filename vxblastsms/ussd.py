@@ -25,7 +25,7 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     transport_name = 'vumi-blastsms'
     ENCODING = 'utf-8'
     EXPECTED_FIELDS = set(['msisdn', 'shortcode', 'sessionid', 'type'])
-    OPTIONAL_FIELDS = set(['msg', 'request', 'appid'])
+    OPTIONAL_FIELDS = set(['msg', 'appid'])
 
     # errors
     RESPONSE_FAILURE_ERROR = "Response to http request failed."
