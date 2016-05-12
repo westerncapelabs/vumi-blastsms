@@ -127,8 +127,16 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     @inlineCallbacks
     def handle_outbound_message(self, message):
 
-        # Generate outbound message
+        # Errors
         message_id = message['message_id']
+        if not message['content']:
+            yield self.publish_nack(message_id, self.NO_CONTENT_ERROR)
+            return
+        if not message['in_reply_to']:
+            yield self.publish_nack(message_id, self.NOT_REPLY_ERROR)
+            return
+
+        # Generate outbound message
         body = self.generate_body(
             message['to_addr'],  # msisdn
             message['transport_metadata']['sessionid'],  # sessionid
@@ -139,14 +147,6 @@ class BlastSMSUssdTransport(HttpRpcTransport):
         )
         log.info('BlastSMSUssdTransport outbound message with content: %r'
                  % (body,))
-
-        # Errors
-        if not message['content']:
-            yield self.publish_nack(message_id, self.NO_CONTENT_ERROR)
-            return
-        if not message['in_reply_to']:
-            yield self.publish_nack(message_id, self.NOT_REPLY_ERROR)
-            return
 
         # Finish Request
         response_id = self.finish_request(
