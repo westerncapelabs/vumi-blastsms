@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+from xml.etree.ElementTree import Element, SubElement, tostring
 
 from twisted.internet.defer import inlineCallbacks
 
@@ -12,33 +13,55 @@ from vxblastsms.ussd import BlastSMSUssdTransport
 
 class TestBlastSMSUssdTransport(VumiTestCase):
 
+    defaults = {
+        'msisdn': '273334444',
+        'shortcode': '8864',
+        'sessionid': 'test_session_id',
+        'type': '2'
+    }
+
     def setUp(self):
-        request_defaults = {
-            'msisdn': '273334444',
-            'shortcode': '8864',
-            'sessionid': 'test_session_id',
-            'type': '2',  # resume
-        }
         self.tx_helper = self.add_helper(
             HttpRpcTransportHelper(
-                BlastSMSUssdTransport,
-                request_defaults=request_defaults,
+                BlastSMSUssdTransport
             )
         )
 
     def get_transport(self, config={}):
         defaults = {
             'app_id': 'test_config_app_id',
-            'web_path': '/api/aat/ussd/',
+            'web_path': '/api/blastSMS/ussd/',
             'web_port': '0',
         }
         defaults.update(config)
         return self.tx_helper.get_transport(defaults)
 
+    def make_inbound_xml_string(self, msisdn=defaults['msisdn'],
+                                shortcode=defaults['shortcode'],
+                                sessionid=defaults['sessionid'],
+                                type=defaults['type'],
+                                msg=None, appid=None):
+        e_ussdresp = Element('ussdresp')
+
+        se_msisdn = SubElement(e_ussdresp, 'msisdn')
+        se_msisdn.text = msisdn
+        se_shortcode = SubElement(e_ussdresp, 'shortcode')
+        se_shortcode.text = shortcode
+        se_sessionid = SubElement(e_ussdresp, 'sessionid')
+        se_sessionid.text = sessionid
+        se_type = SubElement(e_ussdresp, 'type')
+        se_type.text = type
+        se_msg = SubElement(e_ussdresp, 'msg')
+        se_msg.text = msg
+        se_appid = SubElement(e_ussdresp, 'appid')
+        se_appid.text = appid
+
+        return tostring(e_ussdresp, encoding='utf-8')
+
     def assert_inbound_message(self, msg, **field_values):
         expected_field_values = {
             'content': "",
-            'from_addr': self.tx_helper.request_defaults['msisdn'],
+            'from_addr': self.defaults['msisdn'],
         }
         expected_field_values.update(field_values)
         for field, expected_value in expected_field_values.iteritems():
@@ -87,8 +110,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         yield self.get_transport()
         ussd_string = "*1234#"
 
-        # Send initial request
-        d = self.tx_helper.mk_request(shortcode=ussd_string, type='1')
+        inbound_xml = self.make_inbound_xml_string(
+            shortcode=ussd_string, type='1')
+
+        d = self.tx_helper.mk_request(_data=inbound_xml, _method='POST')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 
         self.assert_inbound_message(
@@ -121,7 +146,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "*code#"
 
         # Send initial request
-        d = self.tx_helper.mk_request(shortcode=ussd_string, type='1')
+        inbound_xml = self.make_inbound_xml_string(
+            shortcode=ussd_string, type='1')
+
+        d = self.tx_helper.mk_request(_data=inbound_xml, _method='POST')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 
         self.assert_inbound_message(
@@ -154,9 +182,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         ussd_string = "*1234#"
         user_content = "I didn't expect a kind of Spanish Inquisition!"
-        d = self.tx_helper.mk_request(shortcode=ussd_string,
-                                      msg=user_content,
-                                      appid='provided_app_id')
+        inbound_xml = self.make_inbound_xml_string(
+            shortcode=ussd_string, msg=user_content, appid='provided_app_id')
+
+        d = self.tx_helper.mk_request(_data=inbound_xml, _method='POST')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
             msg,
@@ -188,8 +217,10 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         ussd_string = "xxxx"
 
         user_content = "Well, what is it you want?"
-        d = self.tx_helper.mk_request(shortcode=ussd_string,
-                                      msg=user_content)
+        inbound_xml = self.make_inbound_xml_string(
+            shortcode=ussd_string, msg=user_content)
+
+        d = self.tx_helper.mk_request(_data=inbound_xml, _method='POST')
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
             msg,
@@ -219,8 +250,12 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     @inlineCallbacks
     def test_request_with_missing_parameters(self):
         yield self.get_transport()
-        response = yield self.tx_helper.mk_request_raw(
-            params={"type": '1', "sessionid": 'testsid', "msg": 'a_message'})
+
+        inbound_xml = self.make_inbound_xml_string(
+            msisdn=None, shortcode=None)
+
+        d = self.tx_helper.mk_request(_data=inbound_xml, _method='POST')
+        response = yield d
 
         self.assertEqual(
             json.loads(response.delivered_body),
@@ -231,15 +266,20 @@ class TestBlastSMSUssdTransport(VumiTestCase):
     @inlineCallbacks
     def test_request_with_unexpected_parameters(self):
         yield self.get_transport()
-        response = yield self.tx_helper.mk_request(
-            unexpected_p1='', unexpected_p2='')
+
+        inbound_xml = self.make_inbound_xml_string()
+        bogus_xml = inbound_xml.replace(
+            '<appid />', '<unexp_p1>blah</unexp_p1><unexp_p2>blah</unexp_p2>')
+
+        d = self.tx_helper.mk_request(_data=bogus_xml, _method='POST')
+        response = yield d
 
         self.assertEqual(response.code, 400)
         body = json.loads(response.delivered_body)
         self.assertEqual(set(['unexpected_parameter']), set(body.keys()))
         self.assertEqual(
             sorted(body['unexpected_parameter']),
-            ['unexpected_p1', 'unexpected_p2'])
+            ['unexp_p1', 'unexp_p2'])
 
     @inlineCallbacks
     def test_no_reply_to_in_response(self):
@@ -289,10 +329,13 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         yield self.get_transport()
 
         ussd_appid = 'xxxx'
-        content = "*code#"
-        d = self.tx_helper.mk_request(shortcode=content,
-                                      appid=ussd_appid,
-                                      type='1')
+        shortcode = "*code#"
+
+        inbound_xml = self.make_inbound_xml_string(
+            shortcode=shortcode, appid=ussd_appid, type='1')
+
+        d = self.tx_helper.mk_request(_data=inbound_xml, _method='POST')
+
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
         self.assert_inbound_message(
             msg,
@@ -317,7 +360,11 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         yield self.get_transport()
         content = "One, two, ... five!"
         ussd_string = '*1234#'
-        d = self.tx_helper.mk_request(msg=content, shortcode=ussd_string)
+
+        inbound_xml = self.make_inbound_xml_string(
+            shortcode=ussd_string, msg=content)
+
+        d = self.tx_helper.mk_request(_data=inbound_xml, _method='POST')
 
         [msg] = yield self.tx_helper.wait_for_dispatched_inbound(1)
 

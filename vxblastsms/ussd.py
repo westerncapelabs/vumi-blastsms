@@ -1,5 +1,6 @@
 import json
 from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.etree import ElementTree
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.web import http
@@ -39,26 +40,60 @@ class BlastSMSUssdTransport(HttpRpcTransport):
 
     CONFIG_CLASS = BlastSMSUssdTransportConfig
 
-    def get_optional_field_values(self, request, optional_fields=frozenset()):
+    def get_field_values(self, request_data, expected_fields,
+                         ignored_fields=frozenset()):
         values = {}
+        errors = {}
+
+        for field in request_data:
+            if field not in (expected_fields | ignored_fields):
+                if self._validation_mode == self.STRICT_MODE:
+                    errors.setdefault('unexpected_parameter', []).append(field)
+            else:
+                values[field] = (
+                    request_data[field].decode(self.ENCODING))
+        for field in expected_fields:
+            if field not in values:
+                errors.setdefault('missing_parameter', []).append(field)
+
+        return values, errors
+
+    def get_optional_field_values(self, request_data,
+                                  optional_fields=frozenset()):
+        values = {}
+
         for field in optional_fields:
-            if field in request.args:
-                raw_value = request.args.get(field)[0]
+            if field in request_data:
+                raw_value = request_data[field]
                 values[field] = raw_value.decode(self.ENCODING)
             else:
                 values[field] = None
+
         return values
+
+    def get_request_data_dict(self, request):
+        req_content = request.content.read()
+        req_data = {}
+
+        root = ElementTree.fromstring(req_content)
+        for subel in root:
+            if subel.text is not None:
+                req_data[subel.tag] = subel.text
+
+        return req_data
 
     @inlineCallbacks
     def handle_raw_inbound_message(self, message_id, request):
+        request_data = self.get_request_data_dict(request)
+
         values, errors = self.get_field_values(
-            request,
+            request_data,
             self.EXPECTED_FIELDS,
             self.OPTIONAL_FIELDS,  # pass this in for error checking
         )
 
         optional_values = self.get_optional_field_values(
-            request,
+            request_data,
             self.OPTIONAL_FIELDS
         )
 
