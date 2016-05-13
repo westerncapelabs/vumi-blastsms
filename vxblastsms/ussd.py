@@ -20,8 +20,14 @@ class BlastSMSUssdTransport(HttpRpcTransport):
     """
     HTTP transport for USSD with BlastSMS
     """
-    transport_type = 'ussd'
-    transport_name = 'vumi-blastsms'
+    TRANSPORT_TYPE = 'ussd'
+    TRANSPORT_NAME = 'vumi-blastsms'
+    REQUEST_TYPE = {
+        'request': '1',  # new ussd request
+        'response': '2',  # response in already existing session
+        'release': '3',  # end of session
+        'timeout': '4'  # timeout
+    }
     ENCODING = 'utf-8'
     EXPECTED_FIELDS = set(['msisdn', 'shortcode', 'sessionid', 'type'])
     OPTIONAL_FIELDS = set(['msg', 'appid'])
@@ -63,13 +69,14 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             )
             return
 
-        if values['type'] == '2':  # resume session
+        if values['type'] == self.REQUEST_TYPE['response']:  # resume session
             session_event = TransportUserMessage.SESSION_RESUME
-        elif values['type'] == '1':  # new session
+        elif values['type'] == self.REQUEST_TYPE['request']:  # new session
             session_event = TransportUserMessage.SESSION_NEW
         else:
-            # TODO #4: handle type 3 (close session) and type 4 (timeout)
-            # Default to new session for now
+            # TODO #4: handle self.REQUEST_TYPE['release'] and
+            # self.REQUEST_TYPE['timeout'].
+            # Default to new session for now.
             session_event = TransportUserMessage.SESSION_NEW
 
         if optional_values['msg'] is not None:
@@ -87,8 +94,8 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             to_addr=values['shortcode'],
             from_addr=values['msisdn'],
             session_event=session_event,
-            transport_type=self.transport_type,
-            transport_name=self.transport_name,
+            transport_type=self.TRANSPORT_TYPE,
+            transport_name=self.TRANSPORT_NAME,
             transport_metadata={
                 'sessionid': values['sessionid'],
                 'appid': optional_values['appid'],
@@ -116,12 +123,12 @@ class BlastSMSUssdTransport(HttpRpcTransport):
             else:
                 se_appid.text = None
 
-        # Set Message Type: 2 for Response, 3 for Release
+        # Set request type
         se_type = SubElement(e_ussdresp, 'type')
         if session_event != TransportUserMessage.SESSION_CLOSE:
-            se_type.text = '2'
+            se_type.text = self.REQUEST_TYPE['response']
         else:
-            se_type.text = '3'
+            se_type.text = self.REQUEST_TYPE['release']
 
         se_msg = SubElement(e_ussdresp, 'msg')
         se_msg.text = reply_content
