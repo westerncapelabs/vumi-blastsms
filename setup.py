@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="vxblastsms",
-    version="0.1.0",
+    version="0.1.1",
     url='http://github.com/westerncapelabs/vumi-blastsms',
     license='BSD',
     description="An BlastSMS USSD transport for Vumi.",
