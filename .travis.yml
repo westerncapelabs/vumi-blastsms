@@ -1,21 +1,28 @@
 language: python
 python:
-  - "2.7"
+- '2.7'
 env:
-  # Test against the latest version of Twisted.
-  - TWISTED_VERSION="Twisted"
+- TWISTED_VERSION="Twisted"
 matrix:
   include:
-    # Test against the oldest version of Twisted that we claim to support
-    # This is a separate matrix inclusion to avoid spawning unnecessary builds.
-    - python: "2.7"
-      env: TWISTED_VERSION="Twisted==13.1.0"
+  - python: '2.7'
+    env: TWISTED_VERSION="Twisted==13.1.0"
 install:
-  - "pip install ${TWISTED_VERSION}"
-  - "pip install -r requirements.txt --use-wheel"
-  - "pip install coveralls --use-wheel"
+- pip install ${TWISTED_VERSION}
+- pip install -r requirements.txt --use-wheel
+- pip install coveralls --use-wheel
 script:
-  - if [ -z "$NO_COVERAGE" ]; then COVERAGE_CMD="coverage run --source=vxblastsms"; else COVERAGE_CMD=""; fi
-  - VUMITEST_REDIS_DB=1 $COVERAGE_CMD `which trial` vxblastsms
+- if [ -z "$NO_COVERAGE" ]; then COVERAGE_CMD="coverage run --source=vxblastsms";
+  else COVERAGE_CMD=""; fi
+- VUMITEST_REDIS_DB=1 $COVERAGE_CMD `which trial` vxblastsms
 after_success:
-  - if [ -z "$NO_COVERAGE" ]; then coveralls; fi
+- if [ -z "$NO_COVERAGE" ]; then coveralls; fi
+deploy:
+  provider: pypi
+  user: imsickofmaps
+  password:
+    secure: K+NrYdBY64yBYCRTcLkbQys0/evhV8d/3EKnRsZ3rd5eiHYRaAQSI9so3a1LLCkQrKglhlYhF0OLfO9u7nNtGfYzJ+aomi98qXKoMPW6uepX+RgFpJqeAL7suJjlMKQw160JhEr/MeHO5USpsrNHpX2obwz6wTsDYXl9J+PFhcB8QLxmtxDzPWr8wVM4Zk764ubA7sXcz0ORWhDf/w9K/OcQlOe9GYHNxgVWagghBGOgJSpzaHXbFLy9NZqBghaX2tEkwAEZvQqinlyNnBJdMjKzxVDw+/qICYj47UYvlLSuEcLFIDxOhfsmk2h7dogfm7ViyEOEo2lBvjt19kVlY+rxx0/yoVT/FJEu/nKVpErijex0vKYVBFWtPE3fYHZC5yM+qhR7RdGBNnopC/u3Zb8h8dmbfHMfrTdCm9v9tbip+XOH6yz4vJd6Kv5wF102C74aJ3lbURveuF2I6mF6CDMhkrmEtx5PRPrz3Wt6auEJ38MZrKyof6Oy/s10+piZj/D9F136EtlrfZXiQ7tiyivIN8/82gyA3vOJjk7YZfw9Uiw8VDFfhZZ+Xmfmj4C3bocne9irCJDBDwnpStGg3Sv4NFOAhM/NQlyqZD00dL+U3F0GzRvRUZAkOhvY8WW7fBmP04E/uQ05pZki+UxjvD2OG3UgfKY7Y7bf9nNcvUY=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: westerncapelabs/vumi-blastsms
