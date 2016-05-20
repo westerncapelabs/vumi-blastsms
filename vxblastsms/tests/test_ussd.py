@@ -273,8 +273,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         inbound_xml = self.make_inbound_xml_string()
         bogus_xml = inbound_xml.replace(
-            '<appid />', '<unexp_p1>blah</unexp_p1><unexp_p2>blah</unexp_p2>')
-
+            '<appid/>', '<unexp_p1>blah</unexp_p1><unexp_p2>blah</unexp_p2>')
         d = self.tx_helper.mk_request(_data=bogus_xml, _method='POST')
         response = yield d
 
