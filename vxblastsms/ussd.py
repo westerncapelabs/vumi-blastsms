@@ -1,6 +1,7 @@
 import json
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.etree import ElementTree
+from xml.dom import minidom
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.web import http
@@ -168,10 +169,10 @@ class BlastSMSUssdTransport(HttpRpcTransport):
         se_msg = SubElement(e_ussdresp, 'msg')
         se_msg.text = reply_content
 
-        return tostring(
+        return minidom.parseString(tostring(
             e_ussdresp,
             encoding='utf-8',
-        )
+        )).toxml(encoding="utf-8")
 
     @inlineCallbacks
     def handle_outbound_message(self, message):
