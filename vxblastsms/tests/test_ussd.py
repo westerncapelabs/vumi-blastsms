@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.dom import minidom
 
 from twisted.internet.defer import inlineCallbacks
 
@@ -56,7 +57,9 @@ class TestBlastSMSUssdTransport(VumiTestCase):
         se_appid = SubElement(e_ussdresp, 'appid')
         se_appid.text = appid
 
-        return tostring(e_ussdresp, encoding='utf-8')
+        return minidom.parseString(
+            tostring(e_ussdresp, encoding='utf-8')
+            ).toxml(encoding="utf-8")
 
     def assert_inbound_message(self, msg, **field_values):
         expected_field_values = {
@@ -88,6 +91,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
             se_type = '<type>%s</type>' % '3'
 
         xml = ''.join([
+            '<?xml version="1.0" encoding="utf-8"?>'
             '<ussdresp>',
             se_msisdn, se_sessionid, se_appid, se_type, se_msg,
             '</ussdresp>'
@@ -269,8 +273,7 @@ class TestBlastSMSUssdTransport(VumiTestCase):
 
         inbound_xml = self.make_inbound_xml_string()
         bogus_xml = inbound_xml.replace(
-            '<appid />', '<unexp_p1>blah</unexp_p1><unexp_p2>blah</unexp_p2>')
-
+            '<appid/>', '<unexp_p1>blah</unexp_p1><unexp_p2>blah</unexp_p2>')
         d = self.tx_helper.mk_request(_data=bogus_xml, _method='POST')
         response = yield d
 
